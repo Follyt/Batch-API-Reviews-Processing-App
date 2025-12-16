@@ -14,29 +14,38 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import lombok.extern.slf4j.Slf4j;
+import service.openAI.OpenAiBatchService;
+
+@Slf4j
 @Service
 public class ReviewTagProcessingServiceImpl implements ReviewTagProcessingService {
 
     private final ReviewRepository reviewRepository;
     private final ReviewTagResultRepository resultRepository;
     private final ReviewTagBatchRepository batchRepository;
+    private final OpenAiBatchService openAiBatchService;
 
     private final int portionSize;
 
     public ReviewTagProcessingServiceImpl(
             ReviewRepository reviewRepository,
             ReviewTagResultRepository resultRepository,
-            ReviewTagBatchRepository batchRepository
+            ReviewTagBatchRepository batchRepository,
+            OpenAiBatchService openAiBatchService
     ) {
         this.reviewRepository = reviewRepository;
         this.resultRepository = resultRepository;
         this.batchRepository = batchRepository;
-        this.portionSize = 10; // позже вынесем в @ConfigurationProperties
+        this.openAiBatchService = openAiBatchService;
+        this.portionSize = 10;
     }
 
     @Override
     @Transactional
     public void processNextBatch() {
+
+        log.info("processNextBatch called");
 
         // 1️⃣ Берём следующую порцию review
         List<Review> reviews = reviewRepository.findNextUnprocessed(
@@ -63,6 +72,8 @@ public class ReviewTagProcessingServiceImpl implements ReviewTagProcessingServic
             result.setBatch(batch);
             resultRepository.save(result);
         }
+
+        openAiBatchService.sendBatch(batch);
 
         // На этом этапе:
         // - batch создан

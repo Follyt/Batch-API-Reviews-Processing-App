@@ -12,5 +12,6 @@ public interface ReviewTagResultRepository extends JpaRepository<ReviewTagResult
 
     Optional<ReviewTagResult> findByReviewId(Long reviewId);
 
-    List<ReviewTagResult> findByStatus(TagResultStatus status);
+    List<ReviewTagResult> findByBatchId(Long batchId);
+
 }
