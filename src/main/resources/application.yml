@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: reviews-app
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+
+  liquibase:
+    enabled: true
+    change-log: classpath:/db/changelog/db.changelog-master.yaml
+
+app:
+  OpenAI:
+    base-url: ${OPENAI_BASE_URL}
+    model: ${OPENAI_MODEL}
+    api-key: ${OPENAI_API_KEY}
+
+  batch:
+    portion-size: ${BATCH_PORTION_SIZE}
+    poll-interval-seconds: ${BATCH_POLL_INTERVAL_SECONDS}
+    max-retry: ${BATCH_MAX_RETRY}

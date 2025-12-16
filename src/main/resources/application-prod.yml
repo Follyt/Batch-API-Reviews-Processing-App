@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: JDBC:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    root: INFO
+    org.hibernate.SQL: WARN
+
+app:
+  batch:
+    portion-size: ${BATCH_PORTION_SIZE}
+    poll-interval-seconds: ${BATCH_POLL_INTERVAL_SECONDS}
+    max-retry: ${BATCH_MAX_RETRY}

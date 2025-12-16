@@ -1,0 +1,24 @@
+package com.example.reviews_app;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+
+@SpringBootApplication(
+		scanBasePackages = {
+				"com.example.reviews_app",
+				"service",
+				"repository",
+				"domain"
+		}
+)
+@EnableJpaRepositories(basePackages = "repository")
+@EntityScan(basePackages = "domain.entity")
+public class ReviewsAppApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(ReviewsAppApplication.class, args);
+	}
+
+}
