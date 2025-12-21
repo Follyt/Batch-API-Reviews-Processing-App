@@ -1,5 +1,7 @@
 package service.ReviewTagProcessing;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 public interface ReviewTagProcessingService {
 
     /**
@@ -8,5 +10,5 @@ public interface ReviewTagProcessingService {
      * - создаёт batch
      * - резервирует отзывы
      */
-    void processNextBatch();
+    void processNextBatch() throws JsonProcessingException;
 }

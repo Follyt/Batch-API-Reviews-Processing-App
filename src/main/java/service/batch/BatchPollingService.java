@@ -1,5 +1,6 @@
-package service;
+package service.batch;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -18,7 +19,7 @@ public class BatchPollingService {
     @Scheduled(
             fixedDelayString = "${app.batch.poll-interval-seconds}000"
     )
-    public void poll() {
+    public void poll() throws JsonProcessingException {
         log.info("Batch polling started");
         processingService.processNextBatch();
     }
