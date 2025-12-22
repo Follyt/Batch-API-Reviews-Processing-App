@@ -7,8 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import repository.ReviewTagBatchRepository;
+import service.batch.BatchResultProcessor;
 
-import java.time.OffsetDateTime;
 import java.util.Map;
 
 @Slf4j
@@ -18,6 +18,7 @@ public class OpenAiBatchServiceImpl implements OpenAiBatchService {
 
     private final ReviewTagBatchRepository reviewTagBatchRepository;
     private final OpenAiClient openAiClient;
+    private final BatchResultProcessor batchResultProcessor;
 
     @Override
     @Transactional
@@ -63,9 +64,6 @@ public class OpenAiBatchServiceImpl implements OpenAiBatchService {
 
         batch.setOutputFileId(outputFileId);
         batch.setErrorFileId(errorFileId);
-        batch.setStatus(BatchStatus.COMPLETED);
-        batch.setFinishedAt(OffsetDateTime.now());
-
         reviewTagBatchRepository.save(batch);
 
         log.info(
@@ -74,9 +72,6 @@ public class OpenAiBatchServiceImpl implements OpenAiBatchService {
                 outputFileId
         );
 
-        // ⛔️ СЮДА МЫ ПРИДЁМ СЛЕДУЮЩИМ ШАГОМ:
-        // - download output_file
-        // - parse JSONL
-        // - update review_tag_result
+        batchResultProcessor.processCompletedBatch(batch);
     }
 }

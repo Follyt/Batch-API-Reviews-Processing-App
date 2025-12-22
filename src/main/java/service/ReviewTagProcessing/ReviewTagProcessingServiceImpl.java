@@ -28,20 +28,25 @@ public class ReviewTagProcessingServiceImpl implements ReviewTagProcessingServic
     private final OpenAiBatchService openAiBatchService;
     private final OpenAiFileService openAiFileService;
 
-    private final int portionSize = 1;
+    private final int portionSize;
 
     public ReviewTagProcessingServiceImpl(
             ReviewRepository reviewRepository,
             ReviewTagResultRepository resultRepository,
             ReviewTagBatchRepository batchRepository,
             OpenAiBatchService openAiBatchService,
-            OpenAiFileService openAiFileService
+            OpenAiFileService openAiFileService,
+            BatchProperties batchProperties
     ) {
         this.reviewRepository = reviewRepository;
         this.resultRepository = resultRepository;
         this.batchRepository = batchRepository;
         this.openAiBatchService = openAiBatchService;
         this.openAiFileService = openAiFileService;
+        this.portionSize = batchProperties.getPortionSize();
+        if (this.portionSize <= 0) {
+            throw new IllegalStateException("app.batch.portion-size must be positive");
+        }
     }
 
     @Override

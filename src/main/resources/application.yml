@@ -19,8 +19,9 @@ app:
     base-url: ${OPENAI_BASE_URL}
     model: ${OPENAI_MODEL}
     api-key: ${OPENAI_API_KEY}
+    jsonl-chunk-size: ${BATCH_JSONL_CHUNK_SIZE:5}
 
   batch:
-    portion-size: ${BATCH_PORTION_SIZE}
+    portion-size: ${BATCH_PORTION_SIZE:5}
     poll-interval-seconds: ${BATCH_POLL_INTERVAL_SECONDS}
     max-retry: ${BATCH_MAX_RETRY}

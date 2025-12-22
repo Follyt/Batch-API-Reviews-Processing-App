@@ -15,6 +15,6 @@ logging:
 
 app:
   batch:
-    portion-size: ${BATCH_PORTION_SIZE}
+    portion-size: ${BATCH_PORTION_SIZE:5}
     poll-interval-seconds: ${BATCH_POLL_INTERVAL_SECONDS}
     max-retry: ${BATCH_MAX_RETRY}

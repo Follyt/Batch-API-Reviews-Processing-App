@@ -6,6 +6,7 @@ import domain.entity.Review;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,16 +19,28 @@ public class JsonlGenerator {
             "pmpt_68a383a9f09c8194bde5bbc066b3ed20047740d617bc3b56";
     private static final String PROMPT_VERSION = "62";
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final String CHUNK_ID_PATTERN = "chunk_%04d";
+
+    private final ObjectMapper objectMapper;
+    private final OpenAiProperties openAiProperties;
 
     public String generateJsonl(List<Review> reviews) {
         StringBuilder sb = new StringBuilder();
 
-        for (Review r : reviews) {
+        int chunkSize = openAiProperties.getJsonlChunkSize();
+        if (chunkSize <= 0) {
+            throw new IllegalStateException("app.openai.jsonl-chunk-size must be positive");
+        }
+
+        List<List<Review>> reviewChunks = chunkReviews(reviews, chunkSize);
+        int chunkIndex = 0;
+
+        for (List<Review> chunk : reviewChunks) {
+            chunkIndex++;
 
             // -------- root line --------
             Map<String, Object> line = new LinkedHashMap<>();
-            line.put("custom_id", String.valueOf(r.getReviewId()));
+            line.put("custom_id", String.format(CHUNK_ID_PATTERN, chunkIndex));
             line.put("method", "POST");
             line.put("url", "/v1/responses");
 
@@ -44,11 +57,15 @@ public class JsonlGenerator {
             Map<String, Object> payload = new LinkedHashMap<>();
             payload.put("review_categories", List.of());
 
-            Map<String, Object> reviewObj = new LinkedHashMap<>();
-            reviewObj.put("review_id", String.valueOf(r.getReviewId()));
-            reviewObj.put("review", r.getContent());
+            List<Map<String, Object>> reviewsPayload = new ArrayList<>();
+            for (Review review : chunk) {
+                Map<String, Object> reviewObj = new LinkedHashMap<>();
+                reviewObj.put("review_id", String.valueOf(review.getReviewId()));
+                reviewObj.put("review", review.getContent());
+                reviewsPayload.add(reviewObj);
+            }
 
-            payload.put("reviews", List.of(reviewObj));
+            payload.put("reviews", reviewsPayload);
 
             String payloadJson;
             try {
@@ -125,5 +142,14 @@ public class JsonlGenerator {
         }
 
         return sb.toString();
+    }
+
+    private List<List<Review>> chunkReviews(List<Review> reviews, int chunkSize) {
+        List<List<Review>> result = new ArrayList<>();
+        for (int i = 0; i < reviews.size(); i += chunkSize) {
+            int toIndex = Math.min(reviews.size(), i + chunkSize);
+            result.add(new ArrayList<>(reviews.subList(i, toIndex)));
+        }
+        return result;
     }
 }
