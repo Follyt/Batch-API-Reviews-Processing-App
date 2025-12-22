@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import repository.ReviewTagBatchRepository;
 import repository.ReviewTagResultRepository;
+import service.CategoryService.CategoryService;
 import service.openAI.OpenAiClient;
 
 import java.time.OffsetDateTime;
@@ -26,6 +27,7 @@ public class BatchResultProcessor {
     private final OpenAiClient openAiClient;
     private final ReviewTagResultRepository resultRepository;
     private final ReviewTagBatchRepository batchRepository;
+    private final CategoryService categoryService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -56,13 +58,7 @@ public class BatchResultProcessor {
                 long reviewId =
                         root.path("custom_id").asLong();
 
-                JsonNode contentNode =
-                        root.path("response")
-                                .path("body")
-                                .path("choices")
-                                .get(0)
-                                .path("message")
-                                .path("content");
+                JsonNode contentNode = extractContentNode(root.path("response").path("body"));
 
 
                 String contentJsonText = extractContentJson(contentNode);
@@ -72,6 +68,8 @@ public class BatchResultProcessor {
                 }
 
                 JsonNode payload = objectMapper.readTree(contentJsonText);
+                JsonNode newCategories = payload.path("new_categories");
+                registerNewCategories(newCategories);
                 JsonNode reviewResults = payload.path("reviews");
                 if (!reviewResults.isArray()) {
                     log.warn("Unexpected payload format for custom_id={}: reviews array missing", root.path("custom_id").asText());
@@ -95,6 +93,7 @@ public class BatchResultProcessor {
                     }
 
                     ReviewTagResult result = maybeResult.get();
+                    registerCategoriesFromTags(reviewNode.path("review_tags"));
                     result.setResultJson(reviewNode.toString());
                     result.setStatus(TagResultStatus.COMPLETED);
                     result.setModel("gpt-4.1-mini");
@@ -129,6 +128,9 @@ public class BatchResultProcessor {
 
         if (contentNode.isArray() && !contentNode.isEmpty()) {
             JsonNode first = contentNode.get(0);
+            if (first.has("text") && first.get("text").isTextual()) {
+                return first.get("text").asText();
+            }
             JsonNode textValue = first.path("text").path("value");
             if (textValue.isTextual()) {
                 return textValue.asText();
@@ -140,6 +142,60 @@ public class BatchResultProcessor {
         }
 
         return contentNode.toString();
+    }
+
+    /**
+     * Response body format differs between the Responses API ("output" array) and Chat Completions
+     * ("choices" array). This helper normalizes both cases and returns the content array node if
+     * present.
+     */
+    private JsonNode extractContentNode(JsonNode responseBody) {
+        if (responseBody == null || responseBody.isMissingNode()) {
+            return null;
+        }
+
+        // Responses API: body.output[...].type == "message"
+        JsonNode output = responseBody.path("output");
+        if (output.isArray()) {
+            for (JsonNode item : output) {
+                if ("message".equals(item.path("type").asText())) {
+                    return item.path("content");
+                }
+            }
+        }
+
+        // Chat Completions style fallback
+        JsonNode choices = responseBody.path("choices");
+        if (choices.isArray() && !choices.isEmpty()) {
+            return choices.get(0).path("message").path("content");
+        }
+
+        return null;
+    }
+
+    private void registerNewCategories(JsonNode newCategories) {
+        if (newCategories == null || !newCategories.isArray()) {
+            return;
+        }
+
+        for (JsonNode categoryNode : newCategories) {
+            if (categoryNode.isTextual()) {
+                categoryService.registerIfMissing(categoryNode.asText());
+            }
+        }
+    }
+
+    private void registerCategoriesFromTags(JsonNode reviewTags) {
+        if (reviewTags == null || !reviewTags.isArray()) {
+            return;
+        }
+
+        for (JsonNode tagNode : reviewTags) {
+            JsonNode categoryNode = tagNode.path("category");
+            if (categoryNode.isTextual()) {
+                categoryService.registerIfMissing(categoryNode.asText());
+            }
+        }
     }
 
 }
