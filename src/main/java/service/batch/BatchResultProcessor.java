@@ -16,6 +16,7 @@ import service.openAI.OpenAiClient;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -55,7 +56,7 @@ public class BatchResultProcessor {
                 long reviewId =
                         root.path("custom_id").asLong();
 
-                JsonNode content =
+                JsonNode contentNode =
                         root.path("response")
                                 .path("body")
                                 .path("choices")
@@ -63,22 +64,43 @@ public class BatchResultProcessor {
                                 .path("message")
                                 .path("content");
 
-                ReviewTagResult result = results.stream()
-                        .filter(r -> r.getReviewId() == reviewId)
-                        .findFirst()
-                        .orElse(null);
 
-                if (result == null) {
-                    log.warn("Result not found for review_id={}", reviewId);
+                String contentJsonText = extractContentJson(contentNode);
+                if (contentJsonText == null) {
+                    log.warn("Empty content for batch line with custom_id={}", root.path("custom_id").asText());
                     continue;
                 }
 
-                result.setResultJson(content.toString());
-                result.setStatus(TagResultStatus.COMPLETED);
-                result.setModel("gpt-4.1-mini");
-                result.setUpdatedAt(OffsetDateTime.now());
+                JsonNode payload = objectMapper.readTree(contentJsonText);
+                JsonNode reviewResults = payload.path("reviews");
+                if (!reviewResults.isArray()) {
+                    log.warn("Unexpected payload format for custom_id={}: reviews array missing", root.path("custom_id").asText());
+                    continue;
+                }
 
-                updated++;
+                for (JsonNode reviewNode : reviewResults) {
+                    String reviewIdText = reviewNode.path("review_id").asText(null);
+                    if (reviewIdText == null) {
+                        log.warn("review_id missing in payload for custom_id={}", root.path("custom_id").asText());
+                        continue;
+                    }
+
+                    Optional<ReviewTagResult> maybeResult = results.stream()
+                            .filter(r -> String.valueOf(r.getReviewId()).equals(reviewIdText))
+                            .findFirst();
+
+                    if (maybeResult.isEmpty()) {
+                        log.warn("Result not found for review_id={} (custom_id={})", reviewIdText, root.path("custom_id").asText());
+                        continue;
+                    }
+
+                    ReviewTagResult result = maybeResult.get();
+                    result.setResultJson(reviewNode.toString());
+                    result.setStatus(TagResultStatus.COMPLETED);
+                    result.setModel("gpt-4.1-mini");
+                    result.setUpdatedAt(OffsetDateTime.now());
+                    updated++;
+                }
 
             } catch (Exception e) {
                 log.error("Failed to parse line: {}", line, e);
@@ -95,4 +117,29 @@ public class BatchResultProcessor {
 
         log.info("Batch {} processed: {} results updated", batch.getId(), updated);
     }
+
+    /**
+     * Extracts the JSON string returned by the model from the message content node. The Responses API
+     * returns content as an array of text parts; we take the first text value if present.
+     */
+    private String extractContentJson(JsonNode contentNode) {
+        if (contentNode == null || contentNode.isMissingNode()) {
+            return null;
+        }
+
+        if (contentNode.isArray() && !contentNode.isEmpty()) {
+            JsonNode first = contentNode.get(0);
+            JsonNode textValue = first.path("text").path("value");
+            if (textValue.isTextual()) {
+                return textValue.asText();
+            }
+        }
+
+        if (contentNode.isTextual()) {
+            return contentNode.asText();
+        }
+
+        return contentNode.toString();
+    }
+
 }

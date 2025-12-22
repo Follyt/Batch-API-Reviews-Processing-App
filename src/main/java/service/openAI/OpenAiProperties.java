@@ -10,4 +10,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class OpenAiProperties {
     private String apiKey;
     private String baseUrl = "https://api.openai.com";
+    private int jsonlChunkSize = 5;
 }
