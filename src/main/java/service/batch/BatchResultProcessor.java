@@ -96,7 +96,7 @@ public class BatchResultProcessor {
                     registerCategoriesFromTags(reviewNode.path("review_tags"));
                     result.setResultJson(reviewNode.toString());
                     result.setStatus(TagResultStatus.COMPLETED);
-                    result.setModel("gpt-4.1-mini");
+                    result.setModel("o3-mini");
                     result.setUpdatedAt(OffsetDateTime.now());
                     updated++;
                 }

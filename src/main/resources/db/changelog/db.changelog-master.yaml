@@ -1,7 +1,13 @@
 databaseChangeLog:
   - changeSet:
       id: 001-create-review-tables
-      author: codex
+      author: folly
+      preConditions:
+        - onFail: MARK_RAN
+        - onError: HALT
+        - not:
+            - tableExists:
+                tableName: review
       changes:
         - createTable:
             tableName: review
