@@ -28,8 +28,7 @@ public class ReviewTagProcessingServiceImpl implements ReviewTagProcessingServic
     private final ReviewTagBatchRepository batchRepository;
     private final OpenAiBatchService openAiBatchService;
     private final OpenAiFileService openAiFileService;
-
-    private final int portionSize;
+    private final BatchProperties batchProperties;
 
     public ReviewTagProcessingServiceImpl(
             ReviewRepository reviewRepository,
@@ -44,10 +43,7 @@ public class ReviewTagProcessingServiceImpl implements ReviewTagProcessingServic
         this.batchRepository = batchRepository;
         this.openAiBatchService = openAiBatchService;
         this.openAiFileService = openAiFileService;
-        this.portionSize = batchProperties.getPortionSize();
-        if (this.portionSize <= 0) {
-            throw new IllegalStateException("app.batch.portion-size must be positive");
-        }
+        this.batchProperties = batchProperties;
     }
 
     @Override
@@ -56,6 +52,7 @@ public class ReviewTagProcessingServiceImpl implements ReviewTagProcessingServic
 
         log.info("processNextBatch called");
 
+        int portionSize = resolvePortionSize();
         List<Review> reviews = reviewRepository.findNextUnprocessed(PageRequest.of(0, portionSize));
         if (reviews.isEmpty()) {
             log.info("No reviews to process");
@@ -82,5 +79,13 @@ public class ReviewTagProcessingServiceImpl implements ReviewTagProcessingServic
         openAiBatchService.sendBatch(batch);
 
         log.info("Batch {} sent to OpenAI (requestedCount={})", batch.getId(), batch.getRequestedCount());
+    }
+
+    private int resolvePortionSize() {
+        int portionSize = batchProperties.getPortionSize();
+        if (portionSize <= 0) {
+            throw new IllegalStateException("app.batch.portion-size must be positive");
+        }
+        return portionSize;
     }
 }
