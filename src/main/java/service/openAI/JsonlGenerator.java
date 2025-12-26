@@ -58,6 +58,7 @@ public class JsonlGenerator {
             payload.put("review_categories", List.of());
 
             List<Map<String, Object>> reviewsPayload = new ArrayList<>();
+
             for (Review review : chunk) {
                 Map<String, Object> reviewObj = new LinkedHashMap<>();
                 reviewObj.put("review_id", String.valueOf(review.getReviewId()));

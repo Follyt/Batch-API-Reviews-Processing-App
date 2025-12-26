@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import repository.ReviewRepository;
 import repository.ReviewTagBatchRepository;
 import repository.ReviewTagResultRepository;
-import service.openAI.BatchProperties;
+import service.batch.BatchProperties;
 import service.openAI.OpenAiBatchService;
 import service.openAI.OpenAiFileService;
 

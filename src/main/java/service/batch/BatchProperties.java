@@ -1,4 +1,4 @@
-package service.openAI;
+package service.batch;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -12,7 +12,7 @@ public class BatchProperties {
     /**
      * Number of reviews to fetch and send together in a single batch line.
      */
-    private int portionSize = 5;
+    private int portionSize = 100;
 
     private int pollIntervalSeconds;
 
