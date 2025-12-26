@@ -2,6 +2,9 @@ spring:
   application:
     name: reviews-app
 
+config:
+  import: "optional:file:.env[.properties]"
+
   jpa:
     open-in-view: false
     hibernate:

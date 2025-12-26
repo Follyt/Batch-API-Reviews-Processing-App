@@ -64,11 +64,15 @@ public class ReviewTagProcessingServiceImpl implements ReviewTagProcessingServic
         batch.setRequestedCount(reviews.size());
         batch = batchRepository.save(batch);
 
-        for (Review review : reviews) {
-            ReviewTagResult result = new ReviewTagResult(review.getReviewId(), TagResultStatus.PENDING);
-            result.setBatch(batch);
-            resultRepository.save(result);
-        }
+        ReviewTagBatch finalBatch = batch;
+        List<ReviewTagResult> results = reviews.stream()
+                .map(review -> {
+                    ReviewTagResult result = new ReviewTagResult(review.getReviewId(), TagResultStatus.PENDING);
+                    result.setBatch(finalBatch);
+                    return result;
+                })
+                .toList();
+        resultRepository.saveAll(results);
 
         // 1) Генерация + upload JSONL → получаем request_file_id
         String requestFileId = openAiFileService.uploadBatchFile(reviews);

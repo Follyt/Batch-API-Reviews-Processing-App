@@ -3,12 +3,17 @@ package service.openAI;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import domain.entity.Review;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import service.CategoryService.CategoryService;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
 
 @Service
 @RequiredArgsConstructor
@@ -22,10 +27,15 @@ public class JsonlGenerator {
 
     private final ObjectMapper objectMapper;
     private final OpenAiProperties openAiProperties;
+    private final CategoryService categoryService;
 
     public String generateJsonl(List<Review> reviews) {
         StringBuilder sb = new StringBuilder();
         int requestIndex = 0;
+        String model = openAiProperties.getModel();
+        if (model == null || model.isBlank()) {
+            throw new IllegalStateException("app.openai.model must be set");
+        }
 
         for (Review review : reviews) {
             requestIndex++;
@@ -38,7 +48,7 @@ public class JsonlGenerator {
 
             // -------- body --------
             Map<String, Object> body = new LinkedHashMap<>();
-            body.put("model", "o3-mini");
+            body.put("model", model);
 
             Map<String, Object> prompt = new LinkedHashMap<>();
             prompt.put("id", PROMPT_ID);
@@ -47,7 +57,9 @@ public class JsonlGenerator {
 
             // -------- payload --------
             Map<String, Object> payload = new LinkedHashMap<>();
-            payload.put("review_categories", List.of());
+            List<String> categories = new ArrayList<>(categoryService.getAll());
+            Collections.sort(categories);
+            payload.put("review_categories", categories);
 
             Map<String, Object> reviewObj = new LinkedHashMap<>();
             reviewObj.put("review_id", String.valueOf(review.getReviewId()));

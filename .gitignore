@@ -43,4 +43,5 @@ out/
 *.iml
 *.log
 Environment.env
+.env
 

@@ -1,1 +1,150 @@
 databaseChangeLog:
+  - changeSet:
+      id: 001-create-review-tables
+      author: codex
+      changes:
+        - createTable:
+            tableName: review
+            columns:
+              - column:
+                  name: review_id
+                  type: int
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: content
+                  type: text
+        - createTable:
+            tableName: review_tags
+            columns:
+              - column:
+                  name: category_id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: category_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: review_tag_batch
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: openai_batch_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: request_file_id
+                  type: varchar(255)
+              - column:
+                  name: output_file_id
+                  type: varchar(255)
+              - column:
+                  name: error_file_id
+                  type: varchar(255)
+              - column:
+                  name: requested_count
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: completed_count
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: attempt
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: false
+              - column:
+                  name: finished_at
+                  type: timestamp with time zone
+        - createTable:
+            tableName: review_tag_result
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: review_id
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: batch_id
+                  type: bigint
+              - column:
+                  name: status
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: model
+                  type: varchar(100)
+              - column:
+                  name: prompt_version
+                  type: varchar(50)
+              - column:
+                  name: result_json
+                  type: jsonb
+              - column:
+                  name: error
+                  type: text
+              - column:
+                  name: created_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: review_tag_result
+            columnNames: review_id
+            constraintName: uq_review_tag_result_review
+        - addForeignKeyConstraint:
+            baseTableName: review_tag_result
+            baseColumnNames: batch_id
+            referencedTableName: review_tag_batch
+            referencedColumnNames: id
+            constraintName: fk_review_tag_result_batch
+        - createIndex:
+            tableName: review_tag_result
+            indexName: idx_review_tag_result_batch
+            columns:
+              - column:
+                  name: batch_id
