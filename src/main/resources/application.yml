@@ -22,7 +22,6 @@ app:
     base-url: ${OPENAI_BASE_URL}
     model: ${OPENAI_MODEL}
     api-key: ${OPENAI_API_KEY}
-    jsonl-chunk-size: ${BATCH_JSONL_CHUNK_SIZE:5}
 
   batch:
     portion-size: ${BATCH_PORTION_SIZE:5}
