@@ -10,11 +10,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class BatchProperties {
 
     /**
-     * Number of reviews to fetch and send together in a single batch line.
+     * Number of reviews to fetch and send as individual OpenAI requests per batch.
      */
-    private int portionSize = 100;
+    private int portionSize = 5;
 
     private int pollIntervalSeconds;
 
     private int maxRetry;
+
 }
